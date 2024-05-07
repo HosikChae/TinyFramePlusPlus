@@ -615,7 +615,7 @@ bool _FN TinyFrame<TEMPLATE_PARMS>::RemoveIdListener(ID frame_id)
     for (i = 0; i < this->internal.count_id_lst; i++) {
         lst = &this->internal.id_listeners[i];
         // test if live & matching
-        if (lst->fn != nullptr && lst->id == frame_id) {
+        if (lst->fn != nullptr && (ID_MASK & lst->id) == (ID_MASK & frame_id)) {
             this->cleanup_id_listener(i, lst);
             return true;
         }
@@ -691,7 +691,7 @@ void _FN TinyFrame<TEMPLATE_PARMS>::HandleReceivedMessage()
     for (i = 0; i < this->internal.count_id_lst; i++) {
         ilst = &this->internal.id_listeners[i];
 
-        if (ilst->fn && ilst->id == msg.frame_id) {
+        if (ilst->fn && (ID_MASK & ilst->id) == (ID_MASK & msg.frame_id)) {
             msg.userdata = ilst->userdata; // pass userdata pointer to the callback
             msg.userdata2 = ilst->userdata2;
             res = ilst->fn(&msg);
@@ -782,7 +782,7 @@ bool _FN TinyFrame<TEMPLATE_PARMS>::RenewIdListener(ID id)
     for (i = 0; i < this->internal.count_id_lst; i++) {
         lst = &this->internal.id_listeners[i];
         // test if live & matching
-        if (lst->fn != nullptr && lst->id == id) {
+        if (lst->fn != nullptr && (ID_MASK & lst->id) == (ID_MASK & id)) {
             renew_id_listener(lst);
             return true;
         }
