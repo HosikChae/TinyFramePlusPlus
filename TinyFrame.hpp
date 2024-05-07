@@ -79,13 +79,24 @@ class TinyFrame{
     public:
         // forward declaration of constructor argument
         struct RequiredCallbacks;
+        struct OptionalCallbacks;
 
-        TinyFrame(const RequiredCallbacks& cb, const TinyFrameConfig_t& config, const Peer peer = Peer::SLAVE) : 
+        TinyFrame(const RequiredCallbacks& cb, const OptionalCallbacks& ocb, const TinyFrameConfig_t& config, const Peer peer = Peer::SLAVE) :
+                    tfCallbacks_Required(cb), // copy callback struct
+                    tfCallbacks_Optional(ocb),
+                    tfConfig(config), // copy config struct
+                    internal({}) // zero initialization
+        {
+            this->internal.peer_bit = peer;
+            this->internal.tfCallbacks_Optional_registered = true;
+        };
+
+        TinyFrame(const RequiredCallbacks& cb, const TinyFrameConfig_t& config, const Peer peer = Peer::SLAVE) :
                     tfCallbacks_Required(cb), // copy callback struct
                     tfCallbacks_Optional({}), // zero initialization
                     tfConfig(config), // copy config struct
                     internal({}) // zero initialization
-        { 
+        {
             this->internal.peer_bit = peer;
         };
         TinyFrame(const RequiredCallbacks& cb, const Peer peer = Peer::SLAVE) : TinyFrame(cb, CONFIG_DEFAULT, peer){ };
@@ -101,7 +112,7 @@ class TinyFrame{
          * @param msg - the received message, userdata is populated inside the object
          * @return listener result
          */
-        typedef Result (*Listener)(Msg *msg);
+        using Listener = std::function<Result(Msg *msg)>;
 
         /**
          * TinyFrame Type Listener callback
@@ -110,7 +121,7 @@ class TinyFrame{
          * @param msg - the received message, userdata is populated inside the object
          * @return listener result
          */
-        typedef Result (*Listener_Timeout)();
+        using Listener_Timeout = std::function<void()>;
 
         // ------------------------ TO BE IMPLEMENTED BY USER ------------------------
 
@@ -192,14 +203,14 @@ class TinyFrame{
 
             bool tfCallbacks_Optional_registered;
             bool soft_lock;         //!< Tx lock flag used if the mutex feature is not enabled.
-                
+
             // Those counters are used to optimize look-up times.
             // They point to the highest used slot number,
             // or close to it, depending on the removal order.
             COUNT count_id_lst;
             COUNT count_type_lst;
             COUNT count_generic_lst;
-            
+
 
             /* Transaction callbacks */
             IdListener_ id_listeners[MAX_LISTENERS_ID];
@@ -410,7 +421,7 @@ class TinyFrame{
         void Multipart_Close();
 
 
-    private: 
+    private:
 
         void _FN HandleReceivedMessage();
         size_t _FN ComposeHead(uint8_t *outbuff, Msg *msg);
